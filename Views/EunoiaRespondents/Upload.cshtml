@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "Test";
+}
+
+<h1>Upload</h1>
+<h4>EunoiaRespondent</h4>
+<hr />
+
+<div class="row">
+    <div class="col-md-4">
+
+        @using (Html.BeginForm("Upload", "EunoiaRespondents", FormMethod.Post))
+        {
+            <label for="">Select Document to Upload:</label>
+            <input type="file" name="file">
+            <input type="submit" class="btn btn-primary">
+        }
+
+
+
+
+
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
