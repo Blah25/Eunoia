@@ -12,7 +12,7 @@ namespace Eunoia
 
         public string RespondentId { get; set; }
         public string RespondentFullName { get; set; }
-        public int RespondentAge { get; set; }
+        public string RespondentAge { get; set; }
         public string RespondentPassHash { get; set; }
         public string RespondentEmail { get; set; }
         public string OrganizationName { get; set; }

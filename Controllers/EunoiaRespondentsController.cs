@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Eunoia;
 using System.IO;
 using OfficeOpenXml;
+using System.Text;
 
 namespace Eunoia.Controllers
 {
@@ -24,6 +24,7 @@ namespace Eunoia.Controllers
         public async Task<IActionResult> Index()
         {
             return View(await _context.EunoiaRespondent.ToListAsync());
+            
         }
 
         // GET: EunoiaRespondents/Details/5
@@ -155,22 +156,90 @@ namespace Eunoia.Controllers
         { return View(); }
 
         [HttpPost]
-        public void Upload(string file)
+        public async Task<IActionResult> Upload(string file)
         {
 
-            var fi = new FileInfo(@"C:\Desktop\" + file);
-
+            FileInfo fi = new FileInfo(Path.GetFullPath(file));
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-            using (var ep = new ExcelPackage(fi))
-            {
-
-               var respondentSheet = ep.Workbook.Worksheets["Sample Data Set"];
-
-
-                string valA1 = respondentSheet.Cells["B2"].Value.ToString();
-            }
+            string[] gender = { "Female", "Male" };
             
+            using (ExcelPackage ep = new ExcelPackage(fi))
+            {
+                ExcelWorksheet respondentSheet = ep.Workbook.Worksheets["Sample Data Set"];
+                int totalRows = respondentSheet.Dimension.Rows;
+                
+                List<EunoiaRespondent> users = new List<EunoiaRespondent>();
+                List<EunoiaAssessment> assess = new List<EunoiaAssessment>();
+
+                for (int i = 2; i <= totalRows; i++)
+                {
+                    int gendernum = RandomNumber(0, 2);
+                    StringBuilder assessid = new StringBuilder();
+                    StringBuilder idbuild = new StringBuilder();
+                    StringBuilder pass = new StringBuilder();
+                    idbuild.Append(RandomString(3, true));
+                    idbuild.Append(RandomNumber(100, 999));
+                    pass.Append(RandomNumber(1000, 9999));
+                    pass.Append(RandomString(5, true));
+                    assessid.Append(RandomNumber(1000, 9999));
+
+                    users.Add(new EunoiaRespondent
+                    {
+                        RespondentId = idbuild.ToString(),
+                        RespondentFullName = respondentSheet.Cells[i, 2].Value.ToString(),
+                        RespondentAge = respondentSheet.Cells[i, 3].Value.ToString(),
+                        RespondentPassHash= pass.ToString(),
+                        RespondentEmail=respondentSheet.Cells[i,4].Value.ToString(),
+                        OrganizationName=respondentSheet.Cells[i,5].Value.ToString(),
+                        RespondentGender=gender[gendernum],
+                        RespondentDepartment="--",
+                        RespondentPosition=respondentSheet.Cells[i,6].Value.ToString()
+                    });
+                    
+                    assess.Add(new EunoiaAssessment
+                    {
+                        AssessmentId = Convert.ToInt32(assessid.ToString()),
+                        RespondentId =idbuild.ToString(),
+                        AssessmentDate=Convert.ToDateTime(respondentSheet.Cells[i,1].Value.ToString()),
+                    }) ;
+                       
+
+
+                    
+                }
+
+
+                _context.EunoiaRespondent.AddRange(users);
+                _context.EunoiaAssessment.AddRange(assess);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction(nameof(Index));
         }
+
+        public int RandomNumber(int min, int max)
+        {
+            Random random = new Random();
+            return random.Next(min, max);
+        }
+
+        public string RandomString(int size, bool lowerCase)
+        {
+            StringBuilder builder = new StringBuilder();
+            Random random = new Random();
+            char ch;
+            for (int i = 0; i < size; i++)
+            {
+                ch = Convert.ToChar(Convert.ToInt32(Math.Floor(26 * random.NextDouble() + 65)));
+                builder.Append(ch);
+            }
+            if (lowerCase)
+                return builder.ToString().ToLower();
+            return builder.ToString();
+        }
+
+
+
+
     }
 }
